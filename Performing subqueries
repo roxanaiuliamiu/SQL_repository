@@ -1,0 +1,49 @@
+# the average amount payed by the top 5 customers 
+select avg(total_amount_payed) as average
+from (
+	select
+	customer.customer_id,
+	customer.first_name,
+	customer.last_name,
+	country.country,
+	city.city,
+	sum(payment.amount) as total_amount_payed
+	from payment
+	join customer on payment.customer_id=customer.customer_id
+	join address on customer.address_id=address.address_id
+	join city on address.city_id=city.city_id
+	join country on city.country_id=country.country_id
+	where city.city in
+	(
+		select city.city
+		from customer
+		join address on customer.address_id=address.address_id
+		join city on address.city_id=city.city_id
+		join country on city.country_id=country.country_id
+		where country.country in (
+			select country.country
+			from customer
+			join address on customer.address_id=address.address_id
+			join city on address.city_id=city.city_id
+			join country on city.country_id=country.country_id
+			group by country.country
+			order by count(customer.customer_id) desc
+			limit 10
+		)
+		group by 
+		country.country,
+		city.city
+		order by count(customer.customer_id) desc
+		limit 10
+	)
+	group by 
+	customer.customer_id,
+	customer.first_name,
+	customer.last_name,
+	country.country,
+	city.city
+	order by 
+	sum(payment.amount) desc
+	limit 5
+)
+as total_amount_payed;
